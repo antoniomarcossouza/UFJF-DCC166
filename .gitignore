@@ -1,0 +1,23 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.vscode/
+
+# Data artifacts
+data/
+!data/raw/
+!data/interim/
+!data/processed/
+!data/external/
+!data/reference/
+data/raw/**
+data/reference/**
+!data/reference/.gitkeep
+data/interim/**
+data/processed/**
+data/external/**
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
