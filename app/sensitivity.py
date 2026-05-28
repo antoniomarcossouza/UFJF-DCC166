@@ -1,4 +1,4 @@
-"""Análise de sensibilidade para o SAD Gaucher (sem custo — foco em acesso/adesão)."""
+"""Análise de sensibilidade para o SAD Gaucher (sem custo - foco em acesso/adesão)."""
 
 from __future__ import annotations
 

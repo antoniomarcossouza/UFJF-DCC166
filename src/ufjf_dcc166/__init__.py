@@ -1,4 +1,4 @@
-"""Pacote principal do projeto UFJF DCC166 — SAD Gaucher / SIA-AM."""
+"""Pacote principal do projeto UFJF DCC166 - SAD Gaucher / SIA-AM."""
 
 from ufjf_dcc166.sensitivity import (
     SensitivityPoint,
