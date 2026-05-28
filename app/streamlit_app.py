@@ -30,6 +30,26 @@ APP_DIR = Path(__file__).resolve().parent
 BASE_DIR = Path(__file__).resolve().parents[1]
 PROCESSED = BASE_DIR / "data" / "processed"
 
+# Sem barra de ferramentas Plotly (zoom, pan, download, etc.)
+PLOTLY_CONFIG: dict = {
+    "displayModeBar": False,
+    "scrollZoom": False,
+    "doubleClick": False,
+}
+
+
+def _freeze_plotly(fig) -> None:
+    """Desativa zoom/pan por arrasto e rolagem no gráfico."""
+    fig.update_layout(dragmode=False)
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+
+
+def show_plotly(fig) -> None:
+    _freeze_plotly(fig)
+    st.plotly_chart(fig, width='stretch', config=PLOTLY_CONFIG)
+
+
 UF_NOMES = {
     "11": "RO",
     "12": "AC",
@@ -169,7 +189,7 @@ def tab_visao_geral(
         labels={"dt_label": "Competência", "qt_pacientes": "Pacientes"},
     )
     fig.update_layout(height=380, margin=dict(l=20, r=20, t=30, b=20))
-    st.plotly_chart(fig, use_container_width=True)
+    show_plotly(fig)
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -185,7 +205,7 @@ def tab_visao_geral(
             labels={"qt_apacs": "APACs", "nm_medicamento": ""},
         )
         fig_mix.update_layout(height=360, showlegend=False)
-        st.plotly_chart(fig_mix, use_container_width=True)
+        show_plotly(fig_mix)
 
     with col_b:
         st.subheader("Pacientes por UF (residência)")
@@ -205,7 +225,7 @@ def tab_visao_geral(
             labels={"qt_pacientes": "Pacientes", "nm_uf": "UF"},
         )
         fig_uf.update_layout(height=360)
-        st.plotly_chart(fig_uf, use_container_width=True)
+        show_plotly(fig_uf)
 
 
 def tab_continuidade(
@@ -225,7 +245,7 @@ def tab_continuidade(
         labels={"value": "Meses desde dispensa anterior"},
     )
     fig.update_layout(height=360, showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
+    show_plotly(fig)
 
     st.caption(
         "Gap = meses entre competências consecutivas do mesmo paciente e medicamento. "
@@ -249,7 +269,7 @@ def tab_continuidade(
             labels={"pc_continuidade": "% continuidade", "nm_medicamento": ""},
         )
         fig2.update_layout(height=340)
-        st.plotly_chart(fig2, use_container_width=True)
+        show_plotly(fig2)
 
 
 def tab_sensibilidade(
@@ -297,7 +317,7 @@ def tab_sensibilidade(
             labels={"gap_max_meses": "Gap máximo (meses)", "pc_continuidade": "%"},
         )
         fig.update_layout(height=360)
-        st.plotly_chart(fig, use_container_width=True)
+        show_plotly(fig)
         el = elasticidade_relativa(pontos)
         if el is not None:
             st.info(f"Elasticidade relativa (extremos): {el:.2f}")
@@ -329,7 +349,7 @@ def tab_sensibilidade(
                 yaxis_title="APACs (cenário)",
                 height=380,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            show_plotly(fig)
 
     with sub3:
         st.markdown(
@@ -352,7 +372,7 @@ def tab_sensibilidade(
             labels={"dias_alvo": "Dias-alvo", "pc_dentro_sla": "%"},
         )
         fig_sla.update_layout(height=360)
-        st.plotly_chart(fig_sla, use_container_width=True)
+        show_plotly(fig_sla)
 
     with sub4:
         st.markdown(
@@ -375,7 +395,7 @@ def tab_sensibilidade(
             labels={"fator": "Fator", "n_pacientes": "Pacientes"},
         )
         fig_cov.update_layout(height=360)
-        st.plotly_chart(fig_cov, use_container_width=True)
+        show_plotly(fig_cov)
 
 
 def tab_metodologia() -> None:
