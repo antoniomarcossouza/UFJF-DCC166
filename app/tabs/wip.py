@@ -4,5 +4,5 @@ import streamlit as st
 
 
 def render() -> None:
-    st.header("🚧 WIP 🚧")
+    st.header("🚧 W.I.P. 🚧")
     st.warning("Página em construção.")

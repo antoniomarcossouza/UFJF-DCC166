@@ -81,14 +81,12 @@ def render(
 ) -> None:
     st.markdown(
         """
-**Competência** é o mês de referência da dispensa/APAC (`YYYYMM`). \n
-**Gap** é o intervalo em meses de calendário entre a competência anterior e a atual,
+- Competência é o mês de referência da dispensa/APAC (`YYYYMM`).
+- Gap é o intervalo em meses de calendário entre a competência anterior e a atual,
 para o mesmo paciente e o mesmo medicamento.
 
-Esta aba mostra: \n
-- 1. Com que frequência os gaps entre dispensações consecutivas são
-curtos ou longos;
-- 2. Em cada medicamento, qual fração de pacientes nunca ultrapassa
+Esta aba mostra: 1. Com que frequência os gaps entre dispensações consecutivas são
+curtos ou longos; 2. Em cada medicamento, qual fração de pacientes nunca ultrapassa
 2 meses entre dispensações no período filtrado.
         """
     )
