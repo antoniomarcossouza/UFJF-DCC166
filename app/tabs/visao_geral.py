@@ -38,7 +38,7 @@ def render(
     if medicamento is None:
         st.caption(
             "Linhas sólidas: pacientes distintos naquele medicamento no mês. "
-            "Pontilhado: total distinto no mês (qualquer fármaco); soma das linhas "
+            "Pontilhado: total distinto no mês (qualquer medicamento); soma das linhas "
             "pode exceder o total se houver paciente em mais de um medicamento."
         )
 

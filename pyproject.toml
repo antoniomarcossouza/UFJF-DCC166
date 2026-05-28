@@ -24,8 +24,5 @@ dependencies = [
     "streamlit>=1.40",
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/ufjf_dcc166"]
-
 [tool.uv]
-package = true
+package = false

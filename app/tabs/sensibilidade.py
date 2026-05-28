@@ -64,7 +64,7 @@ def render(
 def _render_gap(pac: pd.DataFrame, kw: _FiltrosSens) -> None:
     st.markdown(
         "**Regra:** paciente contínuo se todos os intervalos entre competências "
-        "consecutivas (mesmo fármaco) ≤ *gap máximo*."
+        "consecutivas (mesmo medicamento) ≤ *gap máximo*."
     )
     gap_slider = st.slider("Gap máximo (meses)", 1, 4, 2)
     taxa = sens_continuidade_por_gap(pac, gap_slider, **kw)

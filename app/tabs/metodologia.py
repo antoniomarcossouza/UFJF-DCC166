@@ -23,7 +23,7 @@ Sem custo na AM (`vl_apac_aprovada` zerado); indicadores de **continuidade**, **
 | Variável | Indicador |
 |----------|-----------|
 | Gap máximo entre dispensações | % pacientes contínuos |
-| % migração Imiglucerase → biossimilar | Volume de APACs por fármaco |
+| % migração Imiglucerase → biossimilar | Volume de APACs por medicamento |
 | Prazo-alvo de autorização | % registros dentro do SLA (proxy p50) |
 | Fator de subdiagnóstico | Coorte ativa estimada |
 

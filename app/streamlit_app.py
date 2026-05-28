@@ -9,6 +9,7 @@ from tabs import (
     render_metodologia,
     render_sensibilidade,
     render_visao_geral,
+    render_wip
 )
 
 
@@ -32,16 +33,18 @@ def main() -> None:
     ano_ini, ano_fim, uf, medicamento = sidebar_filters(apac)
 
     t1, t2, t3, t4 = st.tabs(
-        ["Visão geral", "Metodologia", "Sensibilidade", "Continuidade"]
+        ["Visão geral", "Continuidade", "Sensibilidade", "Metodologia"]
     )
     with t1:
         render_visao_geral(apac, pac, ano_ini, ano_fim, uf, medicamento)
     with t2:
-        render_metodologia()
-    with t3:
-        render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf)
-    with t4:
         render_continuidade(pac, ano_ini, ano_fim, uf, medicamento)
+    with t3:
+        render_wip()
+        # render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf)
+    with t4:
+        render_wip()
+        # render_metodologia()
 
 
 if __name__ == "__main__":

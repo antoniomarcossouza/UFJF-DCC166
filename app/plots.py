@@ -28,7 +28,9 @@ def _estilo_serie_med(nome: str, indice: int) -> dict[str, str]:
             return estilo
     return {
         "color": _MED_SERIE_FALLBACK_COLORS[indice % len(_MED_SERIE_FALLBACK_COLORS)],
-        "symbol": _MED_SERIE_FALLBACK_SYMBOLS[indice % len(_MED_SERIE_FALLBACK_SYMBOLS)],
+        "symbol": _MED_SERIE_FALLBACK_SYMBOLS[
+            indice % len(_MED_SERIE_FALLBACK_SYMBOLS)
+        ],
     }
 
 
@@ -70,7 +72,7 @@ def fig_serie_pacientes_ativos(
     uf: str | None,
     medicamento: str | None,
 ) -> go.Figure:
-    """Série mensal: por medicamento (+ total pontilhado quando sem filtro de fármaco)."""
+    """Série mensal: por medicamento (+ total pontilhado quando sem filtro de medicamento)."""
     labels = {
         "dt_label": "Competência",
         "qt_pacientes": "Pacientes",
@@ -80,7 +82,9 @@ def fig_serie_pacientes_ativos(
     if medicamento:
         fp = filter_pac(pac, ano_ini, ano_fim, uf, medicamento)
         serie = nunique_pacientes(fp, "dt_ano_mes")
-        serie["dt_label"] = pd.to_datetime(serie["dt_ano_mes"].astype(str), format="%Y%m")
+        serie["dt_label"] = pd.to_datetime(
+            serie["dt_ano_mes"].astype(str), format="%Y%m"
+        )
         fig = go.Figure(_trace_serie_med(serie, medicamento, 0))
         fig.update_layout(
             height=380,
@@ -93,10 +97,14 @@ def fig_serie_pacientes_ativos(
 
     fp = filter_pac(pac, ano_ini, ano_fim, uf, medicamento=None)
     serie_med = nunique_pacientes(fp, ["dt_ano_mes", "nm_medicamento"])
-    serie_med["dt_label"] = pd.to_datetime(serie_med["dt_ano_mes"].astype(str), format="%Y%m")
+    serie_med["dt_label"] = pd.to_datetime(
+        serie_med["dt_ano_mes"].astype(str), format="%Y%m"
+    )
 
     serie_total = nunique_pacientes(fp, "dt_ano_mes")
-    serie_total["dt_label"] = pd.to_datetime(serie_total["dt_ano_mes"].astype(str), format="%Y%m")
+    serie_total["dt_label"] = pd.to_datetime(
+        serie_total["dt_ano_mes"].astype(str), format="%Y%m"
+    )
     serie_total = serie_total.sort_values("dt_label")
 
     fig = go.Figure()
