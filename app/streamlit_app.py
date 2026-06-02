@@ -9,7 +9,6 @@ from tabs import (
     render_metodologia,
     render_sensibilidade,
     render_visao_geral,
-    render_wip
 )
 
 
@@ -40,8 +39,7 @@ def main() -> None:
     with t2:
         render_continuidade(pac, ano_ini, ano_fim, uf, medicamento)
     with t3:
-        render_wip()
-        # render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf)
+        render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf, medicamento)
     with t4:
         render_metodologia()
 
