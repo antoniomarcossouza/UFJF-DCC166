@@ -43,8 +43,7 @@ def main() -> None:
         render_wip()
         # render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf)
     with t4:
-        render_wip()
-        # render_metodologia()
+        render_metodologia()
 
 
 if __name__ == "__main__":
