@@ -39,7 +39,7 @@ def main() -> None:
     with t2:
         render_continuidade(pac, ano_ini, ano_fim, uf, medicamento)
     with t3:
-        render_sensibilidade(apac, pac, aut, ano_ini, ano_fim, uf, medicamento)
+        render_sensibilidade(pac, aut, ano_ini, ano_fim, uf, medicamento)
     with t4:
         render_metodologia()
 

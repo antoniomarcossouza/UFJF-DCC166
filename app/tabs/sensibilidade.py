@@ -4,7 +4,6 @@ from typing import TypedDict
 
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 
 from plots import show_plotly
@@ -27,7 +26,6 @@ class _FiltrosSens(TypedDict):
 
 
 def render(
-    apac: pd.DataFrame,
     pac: pd.DataFrame,
     aut: pd.DataFrame,
     ano_ini: int,
