@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.vscode/
+
+# Data
+!data/*/.gitkeep
+!data/processed/*.parquet
+data/raw/**/*.parquet
+data/reference/**/*
