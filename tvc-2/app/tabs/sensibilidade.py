@@ -71,8 +71,8 @@ def render(ads, params):
 
     col_l, col_r = st.columns(2)
     with col_l:
-        ticket_min = st.number_input("Ticket mínimo (USD)", value=10.0,  step=5.0)
-        ticket_max = st.number_input("Ticket máximo (USD)", value=150.0, step=5.0)
+        ticket_min = st.number_input("Preço mínimo (USD)", value=10.0,  step=5.0)
+        ticket_max = st.number_input("Preço máximo (USD)", value=150.0, step=5.0)
     with col_r:
         taxa_min = st.number_input("Taxa conv. mínima", value=0.01, step=0.01, format="%.2f")
         taxa_max = st.number_input("Taxa conv. máxima", value=0.15, step=0.01, format="%.2f")
