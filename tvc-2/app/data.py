@@ -4,7 +4,6 @@ from config import PROCESSED
 
 # Mapeamento de IDs numéricos para rótulos de exibição
 CAMPANHA_NOMES = {916: "A", 936: "B", 1178: "C"}
-# Inverso: "A" -> 916, usado no filtro
 _NOMES_PARA_ID = {v: k for k, v in CAMPANHA_NOMES.items()}
 
 

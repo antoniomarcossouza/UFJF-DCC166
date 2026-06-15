@@ -13,7 +13,7 @@ CAMPANHA_NOMES = {
     1178: "Campanha C",
 }
 
-# Configuração padrão dos gráficos Plotly:
+
 # desativa toolbar, zoom por scroll e duplo-clique para reset
 PLOTLY_CONFIG = {
     "displayModeBar": False,
