@@ -13,7 +13,7 @@ def calc_roi(spent, conversoes, avg_order_value):
     return (receita - spent) / spent
 
 
-# ── What-If ───────────────────────────────────────────────────────────────────
+# What If / Cenários hipotéticos: simula o impacto no ROI de mudanças no investimento ou conversões
 
 def simular_cenario(base_spent, base_conversoes, fator_budget, fator_conv, avg_order_value):
     novo_spent       = base_spent      * fator_budget
@@ -44,7 +44,7 @@ def tabela_cenarios(base_spent, base_conversoes, avg_order_value):
     return pd.DataFrame(linhas)
 
 
-# ── Sensibilidade ─────────────────────────────────────────────────────────────
+# Sensibilidade do ROI ao investimento, mantendo as conversões fixas
 
 def curva_roi_por_budget(base_spent, base_conversoes, avg_order_value):
     fatores = np.arange(0.5, 2.1, 0.1)
@@ -61,7 +61,7 @@ def curva_roi_por_budget(base_spent, base_conversoes, avg_order_value):
     return pd.DataFrame(linhas)
 
 
-# ── Meta (Goal-Seek) ──────────────────────────────────────────────────────────
+# Meta / Goal Seek: encontrar o investimento necessário para atingir um ROI alvo, mantendo as conversões fixas
 
 def goal_seek_investimento(roi_alvo, base_spent, base_conversoes, avg_order_value):
     """
@@ -89,11 +89,11 @@ def goal_seek_investimento(roi_alvo, base_spent, base_conversoes, avg_order_valu
 
     # Verificar se o alvo é atingível: ROI em spent_min deve ser >= roi_alvo
     if objetivo(spent_min) < 0:
-        return None  # alvo maior que o ROI máximo possível
+        return None  
 
     # Verificar se ROI em spent_max é menor que o alvo (deve ser negativo)
     if objetivo(spent_max) >= 0:
-        return None  # alvo menor que o ROI mínimo possível
+        return None  
 
     try:
         sol = root_scalar(
@@ -106,7 +106,7 @@ def goal_seek_investimento(roi_alvo, base_spent, base_conversoes, avg_order_valu
         return None
 
 
-# ── Otimização ────────────────────────────────────────────────────────────────
+# Otimização: alocar orçamento entre campanhas proporcionalmente ao ROI histórico
 
 def alocar_orcamento(df, total_budget, avg_order_value):
     """
