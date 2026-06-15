@@ -1,6 +1,6 @@
 # TVC 2 DCC166
 
-Sistema de Apoio à Decisão para avaliação do ROI de campanhas de marketing digital, com dados reais de anúncios em plataforma digital, pipeline de ETL em Python/Pandas e dashboard Streamlit com modelos what-if, sensibilidade, metas e otimização de orçamento.
+Sistema de Apoio à Decisão para avaliação do ROI de campanhas de marketing digital, com dados fictícios de anúncios em plataforma digital, pipeline de ETL em Python/Pandas e dashboard Streamlit com modelos what-if, sensibilidade, metas e otimização de orçamento.
 
 ## Referências
 - [Sales Conversion Optimization - Kaggle](https://www.kaggle.com/datasets/loveall/clicks-conversion-tracking)
