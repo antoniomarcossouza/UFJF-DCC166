@@ -4,10 +4,6 @@ from plots import grafico_cenarios
 
 
 def render(ads, params):
-    """
-    Aba What-If — o usuário ajusta dois sliders e vê o ROI simulado
-    em tempo real, além da tabela com os quatro cenários fixos.
-    """
     avg_order_value = st.sidebar.number_input(
         "Valor médio por pedido (USD)",
         min_value=1.0,
@@ -22,6 +18,11 @@ def render(ads, params):
     roi_base        = calc_roi(base_spent, base_conversoes, avg_order_value)
 
     st.subheader("Situação atual")
+    st.caption(
+        "Valores reais consolidados do conjunto filtrado — o ponto de partida "
+        "antes de qualquer simulação. Altere o filtro de campanha na barra lateral "
+        "para ver o estado atual de uma campanha específica."
+    )
     c1, c2, c3 = st.columns(3)
     c1.metric("Investimento base",  f"$ {base_spent:,.2f}")
     c2.metric("Conversões base",    f"{int(base_conversoes):,}")

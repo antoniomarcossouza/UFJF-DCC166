@@ -64,14 +64,41 @@ def curva_roi_por_budget(base_spent, base_conversoes, avg_order_value):
 # ── Meta (Goal-Seek) ──────────────────────────────────────────────────────────
 
 def goal_seek_investimento(roi_alvo, base_spent, base_conversoes, avg_order_value):
+    """
+    Encontra o investimento necessário para atingir roi_alvo,
+    mantendo o número de conversões FIXO no valor atual.
+
+    Com conversões fixas, aumentar o gasto diminui o ROI e reduzir
+    o gasto aumenta o ROI — a função é monótona e a bisseção converge.
+
+    Interpretação: "quanto posso gastar no máximo para ainda atingir
+    esse ROI, com a mesma quantidade de vendas de hoje?"
+    """
+    receita_fixa = base_conversoes * avg_order_value
+
     def objetivo(spent):
-        conversoes = base_conversoes * (spent / base_spent)
-        return calc_roi(spent, conversoes, avg_order_value) - roi_alvo
+        if spent <= 0:
+            return -roi_alvo
+        roi = (receita_fixa - spent) / spent
+        return roi - roi_alvo
+
+    # O ROI só é positivo se receita > spent
+    # Limite superior: um pouco abaixo da receita total (ROI quase zero)
+    spent_max = receita_fixa * 0.9999
+    spent_min = base_spent * 0.001
+
+    # Verificar se o alvo é atingível: ROI em spent_min deve ser >= roi_alvo
+    if objetivo(spent_min) < 0:
+        return None  # alvo maior que o ROI máximo possível
+
+    # Verificar se ROI em spent_max é menor que o alvo (deve ser negativo)
+    if objetivo(spent_max) >= 0:
+        return None  # alvo menor que o ROI mínimo possível
 
     try:
         sol = root_scalar(
             objetivo,
-            bracket=[base_spent * 0.01, base_spent * 10],
+            bracket=[spent_min, spent_max],
             method="bisect",
         )
         return round(sol.root, 2) if sol.converged else None
