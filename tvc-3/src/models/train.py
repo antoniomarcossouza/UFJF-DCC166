@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,8 +12,8 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 from lightgbm import LGBMClassifier
 from sklearn.base import clone
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBClassifier
 
@@ -21,10 +22,15 @@ from utils.config import load_config
 from utils.io import load_artifact, load_dataframe, save_artifact, save_json
 from utils.logging import get_logger
 from utils.mlflow_utils import log_model
-from utils.paths import MODELS_DIR, MLRUNS_DIR, PROCESSED_DATA_DIR, ensure_dirs
+from utils.paths import MLRUNS_DIR, MODELS_DIR, PROCESSED_DATA_DIR, ensure_dirs
 from utils.seeds import set_seed
 
 logger = get_logger(__name__)
+warnings.filterwarnings(
+    "ignore",
+    message="X does not have valid feature names",
+    category=UserWarning,
+)
 
 
 @dataclass
@@ -92,7 +98,9 @@ def _configure_class_weight(model: Any, class_weight: Any) -> Any:
     return model
 
 
-def load_training_frames(target: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list[str]]:
+def load_training_frames(
+    target: str,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list[str]]:
     """Carrega splits e features selecionadas."""
     train_df = load_dataframe(PROCESSED_DATA_DIR / "train.parquet")
     val_df = load_dataframe(PROCESSED_DATA_DIR / "val.parquet")
@@ -140,7 +148,9 @@ def train_all() -> dict[str, Any]:
     best_result: TrainingResult | None = None
 
     for balancing in config["training"]["balancing_strategies"]:
-        x_bal, y_bal, class_weight = apply_balancing(x_train, y_train, balancing, seed)
+        x_bal, y_bal, class_weight = apply_balancing(
+            x_train, y_train, balancing, seed
+        )
         for model_name, base_model in get_model_registry(seed).items():
             model = _configure_class_weight(base_model, class_weight)
             with mlflow.start_run(run_name=f"{model_name}_{balancing}"):
@@ -155,8 +165,12 @@ def train_all() -> dict[str, Any]:
                 model.fit(x_bal, y_bal)
                 val_metrics = evaluate_classifier(model, x_val, y_val)
                 test_metrics = evaluate_classifier(model, x_test, y_test)
-                mlflow.log_metrics({f"val_{k}": v for k, v in val_metrics.items()})
-                mlflow.log_metrics({f"test_{k}": v for k, v in test_metrics.items()})
+                mlflow.log_metrics(
+                    {f"val_{k}": v for k, v in val_metrics.items()}
+                )
+                mlflow.log_metrics(
+                    {f"test_{k}": v for k, v in test_metrics.items()}
+                )
                 log_evaluation_artifacts(
                     model,
                     x_test,
@@ -178,7 +192,10 @@ def train_all() -> dict[str, Any]:
                         "metrics": test_metrics,
                     }
                 )
-                if best_result is None or result.metrics["f1"] > best_result.metrics["f1"]:
+                if (
+                    best_result is None
+                    or result.metrics["f1"] > best_result.metrics["f1"]
+                ):
                     best_result = result
 
     assert best_result is not None

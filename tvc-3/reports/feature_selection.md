@@ -2,7 +2,7 @@
 
 - Threshold de correlação: 0.9
 - Features removidas por correlação: 10
-- Features selecionadas: 25
+- Features selecionadas: 26
 
 ## Decisão
 

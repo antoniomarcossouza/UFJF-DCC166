@@ -21,63 +21,67 @@
 \maketitle
 
 \begin{abstract}
-  Redes de dispositivos IoT expandem a superfície de ataque e exigem mecanismos que apoiem administradores na identificação e priorização de ameaças.
-  Este trabalho propõe um Sistema de Apoio à Decisão (SAD) que combina classificação de tráfego, explicabilidade e regras operacionais sobre o dataset CIC-IoT-2023.
-  O pipeline reproduzível integra pré-processamento, seleção de atributos, comparação de estratégias de balanceamento, otimização de hiperparâmetros com Optuna e rastreamento com MLflow.
-  Um dashboard estilo SOC consome modelos treinados offline para inferência, monitoramento simulado, alertas, explicações SHAP e análise de sensibilidade de limiares.
-  Os resultados indicam que a abordagem transforma previsões em recomendações acionáveis para analistas de segurança.
+  Cada câmera, sensor ou controlador conectado à rede acrescenta um ponto onde o tráfego pode ser lido, distorcido ou usado como porta de entrada.
+  Administradores de IoT raramente falham por não ter alertas; falham por não saber qual alerta merece ação imediata.
+  Propomos um Sistema de Apoio à Decisão (SAD) sobre o dataset CIC-IoT-2023, com classificação de tráfego, explicações SHAP e regras que convertem probabilidade em recomendação operacional.
+  O pipeline offline cobre amostragem estratificada, seleção de atributos, comparação entre \textit{class weights} e SMOTE, tuning com Optuna e registro no MLflow.
+  Um dashboard no estilo de centro de operações consome modelos já treinados para inferência, simulação de tráfego, fila de alertas e análise de limiares, sem retreino em produção.
+  No conjunto de teste, o LightGBM atingiu F1 de 0,915 e ROC-AUC de 0,997 na tarefa binária BENIGN versus ATTACK.
 \end{abstract}
 
 \begin{resumo}
-  A segurança em redes IoT requer apoio sistemático à decisão além da detecção isolada de intrusões.
-  Desenvolvemos um SAD com pipeline de ML reproduzível, explicabilidade e dashboard operacional baseado no CIC-IoT-2023.
-  O sistema prioriza ameaças, gera recomendações e permite simular cenários de decisão sem retreinar modelos em produção.
+  Detectar intrusão em IoT é condição necessária, mas insuficiente para quem administra a rede.
+  Construímos um SAD com pipeline reproduzível, explicabilidade e interface operacional alimentada pelo CIC-IoT-2023.
+  O sistema ordena ameaças por risco, sugere ações (bloquear, investigar, monitorar) e permite testar limiares de decisão antes de aplicá-los na operação.
 \end{resumo}
 
 \section{Introdução}
 
-A proliferação de dispositivos IoT amplia vetores de ataque como DDoS, varreduras e malware botnet.
-Administradores de rede precisam não apenas detectar eventos maliciosos, mas decidir rapidamente entre monitorar, investigar ou isolar ativos.
+Redes com dispositivos IoT concentram ataques que o tráfego corporativo tradicional também sofre, só que em escala e com ativos mais difíceis de patchar: DDoS, varredura de portas, botnets Mirai, injeção em protocolos web.
+O analista enxerga volume; o problema é prioridade.
 
-A pergunta-problema deste trabalho é: \textit{como apoiar a tomada de decisão de administradores de redes IoT na identificação, monitoramento e priorização de ameaças utilizando modelos de aprendizado de máquina?}
+Este trabalho parte da pergunta: \textit{como apoiar administradores de redes IoT na identificação, monitoramento e priorização de ameaças com aprendizado de máquina?}
+Não basta rotular um fluxo como malicioso. É preciso dizer o que fazer em seguida e por quê.
 
-Contribuímos com: (i) pipeline modular e reproduzível; (ii) comparação de balanceamento e modelos; (iii) explicabilidade com SHAP; (iv) motor de regras de apoio à decisão; (v) demonstração operacional via dashboard.
+A resposta que implementamos reúne cinco peças: pipeline modular com seed fixa; comparação de quatro classificadores e três formas de lidar com desbalanceamento; explicação por SHAP; motor de regras de risco; e um protótipo de dashboard que simula operação contínua, distinto de um notebook de experimentação.
 
 \section{Metodologia}
 
 \subsection{Dataset e pré-processamento}
 
-Utilizamos o dataset CIC-IoT-2023, com tráfego rotulado em dezenas de tipos de ataque.
-Aplicamos amostragem estratificada de 1\% dos 62 arquivos CSV, normalização de rótulos e mapeamento para tarefa binária (BENIGN vs ATTACK) e multiclasse em oito grupos (DDoS, DoS, Mirai, Recon, Spoofing, Web, BruteForce, Benign).
+O CIC-IoT-2023 reúne dezenas de rótulos finos de ataque em arquivos CSV de tráfego capturado em laboratório.
+Para viabilizar treino e demonstração, extraímos amostra estratificada de 1\% dos 62 arquivos, normalizamos rótulos (o dataset original mistura convenções de caixa) e derivamos dois alvos: binário BENIGN versus ATTACK e oito grupos agregados (DDoS, DoS, Mirai, Recon, Spoofing, Web, BruteForce, Benign).
 
-O pré-processamento remove duplicatas, valores inválidos e colunas de variância zero, aplica \textit{StandardScaler} e divide os dados em treino, validação e teste de forma estratificada (seed fixa).
+A limpeza remove duplicatas, infinitos e colunas sem variância.
+O \textit{StandardScaler} é ajustado só no treino; a divisão treino/validação/teste é estratificada, com a mesma seed em todas as etapas.
+Essa ordem evita que normalização ou seleção de features vazem informação do conjunto de teste.
 
 \subsection{Engenharia de atributos}
 
-Features altamente correlacionadas ($|r| > 0{,}9$) são removidas.
-Mutual information e importância de Random Forest orientam a seleção final, documentada em artefatos versionados.
+Correlação linear acima de 0,9 entre pares de atributos leva à remoção de um deles, para reduzir redundância sem perder sinal.
+Mutual information e importância de Random Forest no treino indicam quais variáveis permanecem; as decisões ficam registradas em artefatos versionados, não só na memória do experimento.
 
 \subsection{Modelos e balanceamento}
 
-Avaliamos Regressão Logística, Random Forest, XGBoost e LightGBM com pipeline compartilhado.
-Comparamos três estratégias de desbalanceamento: sem tratamento, \textit{class weights} e SMOTE.
-Hiperparâmetros de RF, XGBoost e LightGBM são otimizados com Optuna maximizando F1 macro.
-Experimentos são registrados no MLflow (métricas, parâmetros, matrizes e curvas).
+Testamos Regressão Logística, Random Forest, XGBoost e LightGBM no mesmo fluxo de features e splits.
+O desbalanceamento entre tráfego benigno e ataque é tratado de três modos: nenhum ajuste, \textit{class weights} e SMOTE.
+Random Forest, XGBoost e LightGBM passam por busca de hiperparâmetros com Optuna, maximizando F1 macro na validação.
+Cada execução grava métricas, parâmetros, matrizes de confusão e curvas ROC/PR no MLflow.
 
 \subsection{Sistema de apoio à decisão}
 
-Scores de risco derivam das probabilidades de ataque e são classificados em níveis Baixo, Médio, Alto e Crítico.
-Um motor de regras traduz níveis em ações: bloqueio e isolamento (crítico), investigação (alto) ou monitoramento contínuo (médio).
-O dashboard Streamlit simula tráfego em tempo real, exibe alertas, explicações SHAP e análise what-if de limiares --- sem treinamento online.
+A probabilidade de ataque vira score de risco e cai em quatro faixas: Baixo, Médio, Alto e Crítico.
+Regras simples amarram faixa a ação: acima de 95\%, bloqueio e isolamento de segmento; entre 80\% e 95\%, abertura de investigação; entre 60\% e 80\%, monitoramento reforçado.
+O dashboard Streamlit lê modelos e relatórios gerados offline.
+Uma página emula chegada contínua de eventos a partir do conjunto de teste; outra permite mover o limiar de decisão e medir falsos positivos e falsos negativos, tratando o limiar como variável de política operacional, não só de estatística.
 
 \section{Resultados}
 
-A Tabela~\ref{tab:metrics} resume métricas do melhor modelo selecionado no conjunto de teste.
-O sistema registra accuracy, precision, recall, F1, ROC-AUC e PR-AUC, além de matrizes de confusão e curvas ROC/PR como artefatos.
+A Tabela~\ref{tab:metrics} condensa o melhor modelo no teste, LightGBM sem rebalanceamento por SMOTE, entre as doze combinações avaliadas na etapa inicial de treino.
 
 \begin{table}[ht]
 \centering
-\caption{Métricas do melhor modelo (LightGBM) no conjunto de teste}
+\caption{Métricas do LightGBM no conjunto de teste (tarefa binária)}
 \label{tab:metrics}
 \begin{tabular}{lcccccc}
 \hline
@@ -88,26 +92,34 @@ LightGBM & 0.988 & 0.912 & 0.919 & 0.915 & 0.997 & 0.904 \\
 \end{tabular}
 \end{table}
 
-A comparação de balanceamento e tuning indica trade-offs entre recall de ataques e falsos positivos, informando a escolha de limiares na página de simulação de cenários.
+A acurácia próxima de 99\% reflete a predominância de tráfego benigno na amostra; por isso F1 macro e PR-AUC (0,904) pesam mais na escolha do modelo do que acurácia isolada.
+SMOTE elevou recall em alguns classificadores, mas aumentou custo de treino e, em certos casos, falsos positivos.
+A página de simulação de cenários no dashboard expõe esse custo quando o limiar sobe de 0,50 para 0,90: menos alarmes, mais ataques passando despercebidos.
+
+A Figura~\ref{fig:shap} mostra quais atributos de fluxo mais empurram o modelo para a classe ataque.
+Taxa de pacotes, flags TCP e estatísticas de tamanho aparecem no topo, coerente com ataques volumétricos e varredura presentes no dataset.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=.75\textwidth]{../reports/shap/feature_importance.png}
-\caption{Importância de atributos via valores SHAP (gerada pelo pipeline).}
+\caption{Importância média de atributos (valores SHAP absolutos) em subamostra de eventos de ataque.}
 \label{fig:shap}
 \end{figure}
 
 \section{Discussão}
 
-A arquitetura separa ML offline da operação online, alinhando-se a práticas de MLOps e ao escopo de SAD: decisões derivadas de evidências quantitativas e explicáveis.
-Limitações incluem dependência de dados históricos, custo computacional do dataset completo e generalização para novos vetores de ataque.
-A análise de sensibilidade de limiares explicita o compromisso entre detecção e alarmes falsos --- central para administradores.
+Separar treino de operação não é detalhe de engenharia: é o que permite apresentar o trabalho como SAD e não como laboratório de data science embutido em interface web.
+O analista vê recomendação e explicação; o cientista de dados roda \texttt{make train} em outro momento.
+
+A dependência de dados históricos do CIC-IoT-2023 limita a transferência para redes reais com protocolos proprietários ou ataques ainda não rotulados no conjunto.
+Processar 1\% dos CSVs já exige dezenas de minutos e gigabytes em disco; o dataset integral multiplica esse custo.
+A análise de limiares mitiga parte do problema operacional: em IoT, um falso positivo que derruba sensor de saúde ou automação industrial pode custar mais que um ataque não bloqueado em ambiente de teste.
 
 \section{Conclusão}
 
-Apresentamos um SAD para segurança IoT que integra detecção por ML, explicabilidade e recomendações operacionais.
-O protótipo demonstra monitoramento simulado e apoio à decisão em ambiente estilo SOC, indo além de um classificador isolado.
-Trabalhos futuros incluem integração com SIEM real, detecção de \textit{drift} e validação em redes de produção.
+Entregamos um SAD para segurança IoT que liga classificação, explicabilidade e regras de ação em um fluxo reproduzível e demonstrável.
+O protótipo se comporta como painel de monitoramento simplificado, não como ferramenta de treinamento.
+Próximos passos naturais são acoplar alertas a um SIEM, medir \textit{drift} de tráfego ao longo do tempo e validar limiares com equipes reais de operação, não só com métricas de teste.
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template}

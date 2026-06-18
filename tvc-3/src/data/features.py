@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -21,7 +19,9 @@ def correlation_filter(df: pd.DataFrame, threshold: float) -> list[str]:
     """Remove features altamente correlacionadas."""
     corr = df.corr().abs()
     upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
-    to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+    to_drop = [
+        column for column in upper.columns if any(upper[column] > threshold)
+    ]
     return to_drop
 
 
@@ -76,7 +76,9 @@ def select_features() -> dict:
     )
     selected_features = [col for col in remaining if col in selected_features]
 
-    save_artifact(selected_features, PROCESSED_DATA_DIR / "selected_features.joblib")
+    save_artifact(
+        selected_features, PROCESSED_DATA_DIR / "selected_features.joblib"
+    )
 
     report = {
         "correlation_threshold": threshold,

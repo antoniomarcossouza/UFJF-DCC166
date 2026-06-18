@@ -19,10 +19,10 @@ tune:
 explain:
 	PYTHONPATH=src uv run python -m explainability.shap_analysis
 
-pipeline: prepare features train explain
+pipeline: prepare features train tune explain
 
 dashboard:
-	uv run streamlit run app/app.py
+	uv run streamlit run app/streamlit_app.py
 
 mlflow:
 	uv run mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db

@@ -10,8 +10,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+from data.load import load_and_sample_raw
 from utils.config import load_config
-from utils.io import load_dataframe, save_artifact, save_dataframe
+from utils.io import load_dataframe, save_artifact, save_dataframe, save_json
 from utils.logging import get_logger
 from utils.paths import PROCESSED_DATA_DIR, ensure_dirs
 from utils.seeds import set_seed
@@ -19,7 +20,9 @@ from utils.seeds import set_seed
 logger = get_logger(__name__)
 
 
-def validate_dataframe(df: pd.DataFrame, label_column: str = "Label") -> dict[str, Any]:
+def validate_dataframe(
+    df: pd.DataFrame, label_column: str = "Label"
+) -> dict[str, Any]:
     """Valida schema e qualidade básica."""
     report: dict[str, Any] = {
         "rows": len(df),
@@ -28,7 +31,9 @@ def validate_dataframe(df: pd.DataFrame, label_column: str = "Label") -> dict[st
         "duplicate_rows": int(df.duplicated().sum()),
     }
     if label_column in df.columns:
-        report["label_distribution"] = df[label_column].value_counts().to_dict()
+        report["label_distribution"] = (
+            df[label_column].value_counts().to_dict()
+        )
     return report
 
 
@@ -41,7 +46,9 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         for col in cleaned.columns
         if col not in {"Label", "label_binary", "label_multiclass"}
     ]
-    cleaned[feature_cols] = cleaned[feature_cols].replace([np.inf, -np.inf], np.nan)
+    cleaned[feature_cols] = cleaned[feature_cols].replace(
+        [np.inf, -np.inf], np.nan
+    )
     cleaned = cleaned.dropna()
     numeric = cleaned[feature_cols].select_dtypes(include=[np.number])
     zero_var = numeric.columns[numeric.std() == 0].tolist()
@@ -72,7 +79,11 @@ def split_dataset(
         random_state=seed,
         stratify=temp_df[target_column],
     )
-    return train_df.reset_index(drop=True), val_df.reset_index(drop=True), test_df.reset_index(drop=True)
+    return (
+        train_df.reset_index(drop=True),
+        val_df.reset_index(drop=True),
+        test_df.reset_index(drop=True),
+    )
 
 
 def preprocess(
@@ -87,8 +98,6 @@ def preprocess(
 
     dataset_path = dataset_path or (PROCESSED_DATA_DIR / "dataset.parquet")
     if not dataset_path.exists():
-        from data.load import load_and_sample_raw
-
         load_and_sample_raw()
 
     df = load_dataframe(dataset_path)
@@ -134,7 +143,6 @@ def preprocess(
             "test": len(test_df),
         },
     }
-    from utils.io import save_json
 
     save_json(metadata, PROCESSED_DATA_DIR / "preprocess_metadata.json")
     logger.info("Pré-processamento concluído: %s", metadata["splits"])
