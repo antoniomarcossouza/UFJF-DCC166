@@ -1,0 +1,121 @@
+project:
+  name: "IoT Security SAD"
+  seed: 42
+
+paths:
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  models: "models"
+  reports: "reports"
+  mlruns: "mlruns"
+
+data:
+  sample_frac: 0.01
+  chunk_size: 100000
+  label_column: "Label"
+  test_size: 0.2
+  val_size: 0.15
+  correlation_threshold: 0.9
+
+labels:
+  binary:
+    BENIGN: "BENIGN"
+    BENIGNTRAFFIC: "BENIGN"
+    DDOS-RSTFINFLOOD: "ATTACK"
+    DDOS-PSHACK_FLOOD: "ATTACK"
+    DDOS-SYN_FLOOD: "ATTACK"
+    DDOS-UDP_FLOOD: "ATTACK"
+    DDOS-TCP_FLOOD: "ATTACK"
+    DDOS-ICMP_FLOOD: "ATTACK"
+    DDOS-SYNONYMOUSIP_FLOOD: "ATTACK"
+    DDOS-ACK_FRAGMENTATION: "ATTACK"
+    DDOS-UDP_FRAGMENTATION: "ATTACK"
+    DDOS-ICMP_FRAGMENTATION: "ATTACK"
+    DDOS-SLOWLORIS: "ATTACK"
+    DDOS-HTTP_FLOOD: "ATTACK"
+    DOS-UDP_FLOOD: "ATTACK"
+    DOS-SYN_FLOOD: "ATTACK"
+    DOS-TCP_FLOOD: "ATTACK"
+    DOS-HTTP_FLOOD: "ATTACK"
+    MIRAI-GREETH_FLOOD: "ATTACK"
+    MIRAI-GREIP_FLOOD: "ATTACK"
+    MIRAI-UDPPLAIN: "ATTACK"
+    RECON-PINGSWEEP: "ATTACK"
+    RECON-OSSCAN: "ATTACK"
+    RECON-PORTSCAN: "ATTACK"
+    VULNERABILITYSCAN: "ATTACK"
+    RECON-HOSTDISCOVERY: "ATTACK"
+    DNS_SPOOFING: "ATTACK"
+    MITM-ARPSPOOFING: "ATTACK"
+    BROWSERHIJACKING: "ATTACK"
+    BACKDOOR_MALWARE: "ATTACK"
+    XSS: "ATTACK"
+    UPLOADING_ATTACK: "ATTACK"
+    SQLINJECTION: "ATTACK"
+    COMMANDINJECTION: "ATTACK"
+    DICTIONARYBRUTEFORCE: "ATTACK"
+  multiclass:
+    BENIGN: "Benign"
+    BENIGNTRAFFIC: "Benign"
+    DDOS-RSTFINFLOOD: "DDoS"
+    DDOS-PSHACK_FLOOD: "DDoS"
+    DDOS-SYN_FLOOD: "DDoS"
+    DDOS-UDP_FLOOD: "DDoS"
+    DDOS-TCP_FLOOD: "DDoS"
+    DDOS-ICMP_FLOOD: "DDoS"
+    DDOS-SYNONYMOUSIP_FLOOD: "DDoS"
+    DDOS-ACK_FRAGMENTATION: "DDoS"
+    DDOS-UDP_FRAGMENTATION: "DDoS"
+    DDOS-ICMP_FRAGMENTATION: "DDoS"
+    DDOS-SLOWLORIS: "DDoS"
+    DDOS-HTTP_FLOOD: "DDoS"
+    DOS-UDP_FLOOD: "DoS"
+    DOS-SYN_FLOOD: "DoS"
+    DOS-TCP_FLOOD: "DoS"
+    DOS-HTTP_FLOOD: "DoS"
+    MIRAI-GREETH_FLOOD: "Mirai"
+    MIRAI-GREIP_FLOOD: "Mirai"
+    MIRAI-UDPPLAIN: "Mirai"
+    RECON-PINGSWEEP: "Recon"
+    RECON-OSSCAN: "Recon"
+    RECON-PORTSCAN: "Recon"
+    VULNERABILITYSCAN: "Recon"
+    RECON-HOSTDISCOVERY: "Recon"
+    DNS_SPOOFING: "Spoofing"
+    MITM-ARPSPOOFING: "Spoofing"
+    BROWSERHIJACKING: "Web"
+    BACKDOOR_MALWARE: "Web"
+    XSS: "Web"
+    UPLOADING_ATTACK: "Web"
+    SQLINJECTION: "Web"
+    COMMANDINJECTION: "Web"
+    DICTIONARYBRUTEFORCE: "BruteForce"
+
+training:
+  balancing_strategies:
+    - "none"
+    - "class_weight"
+    - "smote"
+  models:
+    - "logistic_regression"
+    - "random_forest"
+    - "xgboost"
+    - "lightgbm"
+  primary_task: "binary"
+  n_optuna_trials: 30
+
+risk:
+  critical: 0.95
+  high: 0.80
+  medium: 0.60
+
+mlflow:
+  experiment_name: "iot-security-sad"
+  tracking_uri: "sqlite:///mlruns/mlflow.db"
+
+shap:
+  sample_size: 500
+
+simulation:
+  interval_seconds: 1.0
+  max_events: 200
