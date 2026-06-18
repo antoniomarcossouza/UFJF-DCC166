@@ -5,156 +5,109 @@
 \usepackage[utf8]{inputenc}
 \usepackage[brazil]{babel}
 
-
 \sloppy
 
-\title{Instructions for Authors of SBC Conferences\\ Papers and Abstracts}
+\title{Sistema de Apoio à Decisão para Segurança em Redes IoT com Aprendizado de Máquina}
 
-\author{Luciana P. Nedel\inst{1}, Rafael H. Bordini\inst{2}, Flávio Rech
-  Wagner\inst{1}, Jomi F. Hübner\inst{3} }
+\author{Antônio Marcos\inst{1}}
 
-
-\address{Instituto de Informática -- Universidade Federal do Rio Grande do Sul
-  (UFRGS)\\
-  Caixa Postal 15.064 -- 91.501-970 -- Porto Alegre -- RS -- Brazil
-\nextinstitute
-  Department of Computer Science -- University of Durham\\
-  Durham, U.K.
-\nextinstitute
-  Departamento de Sistemas e Computação\\
-  Universidade Regional de Blumenal (FURB) -- Blumenau, SC -- Brazil
-  \email{\{nedel,flavio\}@inf.ufrgs.br, R.Bordini@durham.ac.uk,
-  jomi@inf.furb.br}
+\address{Departamento de Ciência da Computação -- Universidade Federal de Juiz de Fora (UFJF)\\
+  Juiz de Fora -- MG -- Brazil
+  \email{antoniomarcos.souza2002@gmail.com}
 }
 
-\begin{document} 
+\begin{document}
 
 \maketitle
 
 \begin{abstract}
-  This meta-paper describes the style to be used in articles and short papers
-  for SBC conferences. For papers in English, you should add just an abstract
-  while for the papers in Portuguese, we also ask for an abstract in
-  Portuguese (``resumo''). In both cases, abstracts should not have more than
-  10 lines and must be in the first page of the paper.
+  Redes de dispositivos IoT expandem a superfície de ataque e exigem mecanismos que apoiem administradores na identificação e priorização de ameaças.
+  Este trabalho propõe um Sistema de Apoio à Decisão (SAD) que combina classificação de tráfego, explicabilidade e regras operacionais sobre o dataset CIC-IoT-2023.
+  O pipeline reproduzível integra pré-processamento, seleção de atributos, comparação de estratégias de balanceamento, otimização de hiperparâmetros com Optuna e rastreamento com MLflow.
+  Um dashboard estilo SOC consome modelos treinados offline para inferência, monitoramento simulado, alertas, explicações SHAP e análise de sensibilidade de limiares.
+  Os resultados indicam que a abordagem transforma previsões em recomendações acionáveis para analistas de segurança.
 \end{abstract}
 
-\begin{resumo} 
-  Este meta-artigo descreve o estilo a ser usado na confecção de artigos e
-  resumos de artigos para publicação nos anais das conferências organizadas
-  pela SBC. É solicitada a escrita de resumo e abstract apenas para os artigos
-  escritos em português. Artigos em inglês deverão apresentar apenas abstract.
-  Nos dois casos, o autor deve tomar cuidado para que o resumo (e o abstract)
-  não ultrapassem 10 linhas cada, sendo que ambos devem estar na primeira
-  página do artigo.
+\begin{resumo}
+  A segurança em redes IoT requer apoio sistemático à decisão além da detecção isolada de intrusões.
+  Desenvolvemos um SAD com pipeline de ML reproduzível, explicabilidade e dashboard operacional baseado no CIC-IoT-2023.
+  O sistema prioriza ameaças, gera recomendações e permite simular cenários de decisão sem retreinar modelos em produção.
 \end{resumo}
 
+\section{Introdução}
 
-\section{General Information}
+A proliferação de dispositivos IoT amplia vetores de ataque como DDoS, varreduras e malware botnet.
+Administradores de rede precisam não apenas detectar eventos maliciosos, mas decidir rapidamente entre monitorar, investigar ou isolar ativos.
 
-All full papers and posters (short papers) submitted to some SBC conference,
-including any supporting documents, should be written in English or in
-Portuguese. The format paper should be A4 with single column, 3.5 cm for upper
-margin, 2.5 cm for bottom margin and 3.0 cm for lateral margins, without
-headers or footers. The main font must be Times, 12 point nominal size, with 6
-points of space before each paragraph. Page numbers must be suppressed.
+A pergunta-problema deste trabalho é: \textit{como apoiar a tomada de decisão de administradores de redes IoT na identificação, monitoramento e priorização de ameaças utilizando modelos de aprendizado de máquina?}
 
-Full papers must respect the page limits defined by the conference.
-Conferences that publish just abstracts ask for \textbf{one}-page texts.
+Contribuímos com: (i) pipeline modular e reproduzível; (ii) comparação de balanceamento e modelos; (iii) explicabilidade com SHAP; (iv) motor de regras de apoio à decisão; (v) demonstração operacional via dashboard.
 
-\section{First Page} \label{sec:firstpage}
+\section{Metodologia}
 
-The first page must display the paper title, the name and address of the
-authors, the abstract in English and ``resumo'' in Portuguese (``resumos'' are
-required only for papers written in Portuguese). The title must be centered
-over the whole page, in 16 point boldface font and with 12 points of space
-before itself. Author names must be centered in 12 point font, bold, all of
-them disposed in the same line, separated by commas and with 12 points of
-space after the title. Addresses must be centered in 12 point font, also with
-12 points of space after the authors' names. E-mail addresses should be
-written using font Courier New, 10 point nominal size, with 6 points of space
-before and 6 points of space after.
+\subsection{Dataset e pré-processamento}
 
-The abstract and ``resumo'' (if is the case) must be in 12 point Times font,
-indented 0.8cm on both sides. The word \textbf{Abstract} and \textbf{Resumo},
-should be written in boldface and must precede the text.
+Utilizamos o dataset CIC-IoT-2023, com tráfego rotulado em dezenas de tipos de ataque.
+Aplicamos amostragem estratificada de 1\% dos 62 arquivos CSV, normalização de rótulos e mapeamento para tarefa binária (BENIGN vs ATTACK) e multiclasse em oito grupos (DDoS, DoS, Mirai, Recon, Spoofing, Web, BruteForce, Benign).
 
-\section{CD-ROMs and Printed Proceedings}
+O pré-processamento remove duplicatas, valores inválidos e colunas de variância zero, aplica \textit{StandardScaler} e divide os dados em treino, validação e teste de forma estratificada (seed fixa).
 
-In some conferences, the papers are published on CD-ROM while only the
-abstract is published in the printed Proceedings. In this case, authors are
-invited to prepare two final versions of the paper. One, complete, to be
-published on the CD and the other, containing only the first page, with
-abstract and ``resumo'' (for papers in Portuguese).
+\subsection{Engenharia de atributos}
 
-\section{Sections and Paragraphs}
+Features altamente correlacionadas ($|r| > 0{,}9$) são removidas.
+Mutual information e importância de Random Forest orientam a seleção final, documentada em artefatos versionados.
 
-Section titles must be in boldface, 13pt, flush left. There should be an extra
-12 pt of space before each title. Section numbering is optional. The first
-paragraph of each section should not be indented, while the first lines of
-subsequent paragraphs should be indented by 1.27 cm.
+\subsection{Modelos e balanceamento}
 
-\subsection{Subsections}
+Avaliamos Regressão Logística, Random Forest, XGBoost e LightGBM com pipeline compartilhado.
+Comparamos três estratégias de desbalanceamento: sem tratamento, \textit{class weights} e SMOTE.
+Hiperparâmetros de RF, XGBoost e LightGBM são otimizados com Optuna maximizando F1 macro.
+Experimentos são registrados no MLflow (métricas, parâmetros, matrizes e curvas).
 
-The subsection titles must be in boldface, 12pt, flush left.
+\subsection{Sistema de apoio à decisão}
 
-\section{Figures and Captions}\label{sec:figs}
+Scores de risco derivam das probabilidades de ataque e são classificados em níveis Baixo, Médio, Alto e Crítico.
+Um motor de regras traduz níveis em ações: bloqueio e isolamento (crítico), investigação (alto) ou monitoramento contínuo (médio).
+O dashboard Streamlit simula tráfego em tempo real, exibe alertas, explicações SHAP e análise what-if de limiares --- sem treinamento online.
 
+\section{Resultados}
 
-Figure and table captions should be centered if less than one line
-(Figure~\ref{fig:exampleFig1}), otherwise justified and indented by 0.8cm on
-both margins, as shown in Figure~\ref{fig:exampleFig2}. The caption font must
-be Helvetica, 10 point, boldface, with 6 points of space before and after each
-caption.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=.5\textwidth]{figures/fig1.jpg}
-\caption{A typical figure}
-\label{fig:exampleFig1}
-\end{figure}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=.3\textwidth]{figures/fig2.jpg}
-\caption{This figure is an example of a figure caption taking more than one
-  line and justified considering margins mentioned in Section~\ref{sec:figs}.}
-\label{fig:exampleFig2}
-\end{figure}
-
-In tables, try to avoid the use of colored or shaded backgrounds, and avoid
-thick, doubled, or unnecessary framing lines. When reporting empirical data,
-do not use more decimal digits than warranted by their precision and
-reproducibility. Table caption must be placed before the table (see Table 1)
-and the font used must also be Helvetica, 10 point, boldface, with 6 points of
-space before and after each caption.
+A Tabela~\ref{tab:metrics} resume métricas do melhor modelo selecionado no conjunto de teste.
+O sistema registra accuracy, precision, recall, F1, ROC-AUC e PR-AUC, além de matrizes de confusão e curvas ROC/PR como artefatos.
 
 \begin{table}[ht]
 \centering
-\caption{Variables to be considered on the evaluation of interaction
-  techniques}
-\label{tab:exTable1}
-\includegraphics[width=.7\textwidth]{figures/table.jpg}
+\caption{Métricas do melhor modelo (LightGBM) no conjunto de teste}
+\label{tab:metrics}
+\begin{tabular}{lcccccc}
+\hline
+Modelo & Acc. & Prec. & Rec. & F1 & ROC-AUC & PR-AUC \\
+\hline
+LightGBM & 0.988 & 0.912 & 0.919 & 0.915 & 0.997 & 0.904 \\
+\hline
+\end{tabular}
 \end{table}
 
-\section{Images}
+A comparação de balanceamento e tuning indica trade-offs entre recall de ataques e falsos positivos, informando a escolha de limiares na página de simulação de cenários.
 
-All images and illustrations should be in black-and-white, or gray tones,
-excepting for the papers that will be electronically available (on CD-ROMs,
-internet, etc.). The image resolution on paper should be about 600 dpi for
-black-and-white images, and 150-300 dpi for grayscale images.  Do not include
-images with excessive resolution, as they may take hours to print, without any
-visible difference in the result. 
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.75\textwidth]{../reports/shap/feature_importance.png}
+\caption{Importância de atributos via valores SHAP (gerada pelo pipeline).}
+\label{fig:shap}
+\end{figure}
 
-\section{References}
+\section{Discussão}
 
-Bibliographic references must be unambiguous and uniform.  We recommend giving
-the author names references in brackets, e.g. \cite{knuth:84},
-\cite{boulic:91}, and \cite{smith:99}.
+A arquitetura separa ML offline da operação online, alinhando-se a práticas de MLOps e ao escopo de SAD: decisões derivadas de evidências quantitativas e explicáveis.
+Limitações incluem dependência de dados históricos, custo computacional do dataset completo e generalização para novos vetores de ataque.
+A análise de sensibilidade de limiares explicita o compromisso entre detecção e alarmes falsos --- central para administradores.
 
-The references must be listed using 12 point font size, with 6 points of space
-before each reference. The first line of each reference should not be
-indented, while the subsequent should be indented by 0.5 cm.
+\section{Conclusão}
+
+Apresentamos um SAD para segurança IoT que integra detecção por ML, explicabilidade e recomendações operacionais.
+O protótipo demonstra monitoramento simulado e apoio à decisão em ambiente estilo SOC, indo além de um classificador isolado.
+Trabalhos futuros incluem integração com SIEM real, detecção de \textit{drift} e validação em redes de produção.
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template}

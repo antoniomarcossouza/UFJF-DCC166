@@ -1,5 +1,11 @@
 __pycache__/
 .venv/
 .vscode/
+mlruns/
+*.db
+.pytest_cache/
+*.pyc
 
-data/*/*.csv
+data/raw/*.csv
+data/processed/
+models/*.joblib
