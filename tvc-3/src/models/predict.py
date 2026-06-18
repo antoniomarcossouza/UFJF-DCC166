@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from utils.io import load_artifact, load_json
@@ -40,6 +38,28 @@ class ModelPredictor:
             return str(self.label_encoder.inverse_transform([int(encoded)])[0])
         return str(encoded)
 
+    def _is_benign_label(self, label: str) -> bool:
+        return label.upper() in {"BENIGN", "BENIGNTRAFFIC"}
+
+    def _attack_probability(
+        self, label: str, probabilities: dict[str, float]
+    ) -> float:
+        if "ATTACK" in probabilities:
+            return probabilities["ATTACK"]
+        benign_prob = next(
+            (
+                prob
+                for cls, prob in probabilities.items()
+                if self._is_benign_label(cls)
+            ),
+            0.0,
+        )
+        if benign_prob > 0:
+            return 1.0 - benign_prob
+        if self._is_benign_label(label):
+            return 1.0 - max(probabilities.values(), default=0.0)
+        return max(probabilities.values(), default=0.0)
+
     def predict_row(self, row: pd.Series) -> PredictionResult:
         x = row[self.features].to_numpy(dtype=float).reshape(1, -1)
         raw_pred = self.model.predict(x)[0]
@@ -48,18 +68,19 @@ class ModelPredictor:
         if hasattr(self.model, "predict_proba"):
             proba = self.model.predict_proba(x)[0]
         probabilities = (
-            {str(cls): float(p) for cls, p in zip(self.classes_, proba)}
+            {
+                str(cls): float(p)
+                for cls, p in zip(self.classes_, proba, strict=False)
+            }
             if proba is not None
             else {label: 1.0}
         )
-        attack_prob = probabilities.get("ATTACK", 0.0)
-        if attack_prob == 0.0 and label != "BENIGN":
-            attack_prob = max(probabilities.values())
+        attack_prob = self._attack_probability(label, probabilities)
         return PredictionResult(
             label=label,
-            probability=float(attack_prob if label != "BENIGN" else 1 - attack_prob),
+            probability=float(attack_prob),
             probabilities=probabilities,
-            is_attack=label != "BENIGN",
+            is_attack=not self._is_benign_label(label),
         )
 
     def predict_batch(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -74,12 +95,29 @@ class ModelPredictor:
                 attack_idx = list(self.classes_).index("ATTACK")
                 output["attack_probability"] = proba[:, attack_idx]
             else:
-                output["attack_probability"] = proba.max(axis=1)
+                benign_idx = next(
+                    (
+                        i
+                        for i, cls in enumerate(self.classes_)
+                        if self._is_benign_label(str(cls))
+                    ),
+                    None,
+                )
+                if benign_idx is not None:
+                    output["attack_probability"] = 1.0 - proba[:, benign_idx]
+                else:
+                    output["attack_probability"] = proba.max(axis=1)
         else:
-            output["attack_probability"] = (pd.Series(labels) != "BENIGN").astype(float)
-        output["is_attack"] = output["predicted_label"] != "BENIGN"
+            output["attack_probability"] = (
+                pd.Series(labels).map(
+                    lambda lbl: not self._is_benign_label(lbl)
+                )
+            ).astype(float)
+        output["is_attack"] = output["predicted_label"].map(
+            lambda lbl: not self._is_benign_label(str(lbl))
+        )
         return output
 
 
 def load_test_data() -> pd.DataFrame:
-  return pd.read_parquet(PROCESSED_DATA_DIR / "test.parquet")
+    return pd.read_parquet(PROCESSED_DATA_DIR / "test.parquet")

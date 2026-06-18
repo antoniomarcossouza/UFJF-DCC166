@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import mlflow
@@ -16,14 +17,19 @@ from xgboost import XGBClassifier
 from models.evaluate import evaluate_classifier, log_evaluation_artifacts
 from models.train import apply_balancing, load_training_frames
 from utils.config import load_config
-from utils.io import load_artifact, save_artifact, save_json
+from utils.io import save_artifact, save_json
 from utils.logging import get_logger
 from utils.mlflow_utils import log_model
-from utils.paths import MODELS_DIR, MLRUNS_DIR, ensure_dirs
+from utils.paths import MLRUNS_DIR, MODELS_DIR, ensure_dirs
 from utils.seeds import set_seed
 
 logger = get_logger(__name__)
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+warnings.filterwarnings(
+    "ignore",
+    message="X does not have valid feature names",
+    category=UserWarning,
+)
 
 
 def _objective_factory(
@@ -35,14 +41,18 @@ def _objective_factory(
     seed: int,
     balancing: str,
 ) -> Any:
-    x_bal, y_bal, class_weight = apply_balancing(x_train, y_train, balancing, seed)
+    x_bal, y_bal, class_weight = apply_balancing(
+        x_train, y_train, balancing, seed
+    )
 
     def objective(trial: optuna.Trial) -> float:
         if model_name == "random_forest":
             model = RandomForestClassifier(
                 n_estimators=trial.suggest_int("n_estimators", 100, 400),
                 max_depth=trial.suggest_int("max_depth", 4, 20),
-                min_samples_split=trial.suggest_int("min_samples_split", 2, 10),
+                min_samples_split=trial.suggest_int(
+                    "min_samples_split", 2, 10
+                ),
                 class_weight=class_weight,
                 random_state=seed,
                 n_jobs=-1,
@@ -51,7 +61,9 @@ def _objective_factory(
             model = XGBClassifier(
                 n_estimators=trial.suggest_int("n_estimators", 100, 400),
                 max_depth=trial.suggest_int("max_depth", 3, 12),
-                learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                learning_rate=trial.suggest_float(
+                    "learning_rate", 0.01, 0.3, log=True
+                ),
                 subsample=trial.suggest_float("subsample", 0.6, 1.0),
                 random_state=seed,
                 n_jobs=-1,
@@ -62,7 +74,9 @@ def _objective_factory(
             model = LGBMClassifier(
                 n_estimators=trial.suggest_int("n_estimators", 100, 400),
                 num_leaves=trial.suggest_int("num_leaves", 16, 128),
-                learning_rate=trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                learning_rate=trial.suggest_float(
+                    "learning_rate", 0.01, 0.3, log=True
+                ),
                 class_weight=class_weight,
                 random_state=seed,
                 n_jobs=-1,
@@ -113,7 +127,9 @@ def run_tuning() -> dict[str, Any]:
     summary: dict[str, Any] = {}
 
     for model_name in ("random_forest", "xgboost", "lightgbm"):
-        study = optuna.create_study(direction="maximize", study_name=model_name)
+        study = optuna.create_study(
+            direction="maximize", study_name=model_name
+        )
         study.optimize(
             _objective_factory(
                 model_name, x_train, y_train, x_val, y_val, seed, balancing
@@ -122,7 +138,9 @@ def run_tuning() -> dict[str, Any]:
         )
         best_params = study.best_params
         with mlflow.start_run(run_name=f"tuned_{model_name}"):
-            mlflow.log_params({"model": model_name, **best_params, "balancing": balancing})
+            mlflow.log_params(
+                {"model": model_name, **best_params, "balancing": balancing}
+            )
             if model_name == "random_forest":
                 model = RandomForestClassifier(
                     **best_params,
@@ -146,11 +164,17 @@ def run_tuning() -> dict[str, Any]:
                     n_jobs=-1,
                     verbosity=-1,
                 )
-            x_bal, y_bal, _ = apply_balancing(x_train, y_train, balancing, seed)
+            x_bal, y_bal, _ = apply_balancing(
+                x_train, y_train, balancing, seed
+            )
             model.fit(x_bal, y_bal)
             test_metrics = evaluate_classifier(model, x_test, y_test)
-            mlflow.log_metrics({f"test_{k}": v for k, v in test_metrics.items()})
-            log_evaluation_artifacts(model, x_test, y_test, prefix=f"tuned_{model_name}")
+            mlflow.log_metrics(
+                {f"test_{k}": v for k, v in test_metrics.items()}
+            )
+            log_evaluation_artifacts(
+                model, x_test, y_test, prefix=f"tuned_{model_name}"
+            )
             log_model(model, model_name)
             summary[model_name] = {
                 "best_params": best_params,
@@ -188,7 +212,9 @@ def run_tuning() -> dict[str, Any]:
         final_model.fit(x_bal, y_bal)
         test_metrics = evaluate_classifier(final_model, x_test, y_test)
         mlflow.log_metrics({f"test_{k}": v for k, v in test_metrics.items()})
-        log_evaluation_artifacts(final_model, x_test, y_test, prefix="best_tuned")
+        log_evaluation_artifacts(
+            final_model, x_test, y_test, prefix="best_tuned"
+        )
         log_model(final_model, best_name)
         save_artifact(final_model, MODELS_DIR / "best_model.joblib")
         save_artifact(features, MODELS_DIR / "features.joblib")

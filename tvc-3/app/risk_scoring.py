@@ -1,4 +1,4 @@
-"""Pontuação de risco."""
+"""Pontuação de risco para alertas do dashboard."""
 
 from __future__ import annotations
 
@@ -13,7 +13,9 @@ class RiskAssessment:
     level: str
 
 
-def classify_risk(score: float, thresholds: dict[str, float] | None = None) -> RiskAssessment:
+def classify_risk(
+    score: float, thresholds: dict[str, float] | None = None
+) -> RiskAssessment:
     """Classifica risco em Baixo/Médio/Alto/Crítico."""
     config = load_config()
     thresholds = thresholds or config["risk"]

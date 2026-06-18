@@ -13,8 +13,8 @@ from sklearn.metrics import (
     average_precision_score,
     confusion_matrix,
     f1_score,
-    precision_score,
     precision_recall_curve,
+    precision_score,
     recall_score,
     roc_auc_score,
     roc_curve,
@@ -36,14 +36,22 @@ def _get_proba(model: Any, x: np.ndarray) -> np.ndarray | None:
     return None
 
 
-def evaluate_classifier(model: Any, x: np.ndarray, y_true: np.ndarray) -> dict[str, float]:
+def evaluate_classifier(
+    model: Any, x: np.ndarray, y_true: np.ndarray
+) -> dict[str, float]:
     """Calcula métricas obrigatórias."""
     y_pred = model.predict(x)
     metrics: dict[str, float] = {
         "accuracy": float(accuracy_score(y_true, y_pred)),
-        "precision": float(precision_score(y_true, y_pred, average="macro", zero_division=0)),
-        "recall": float(recall_score(y_true, y_pred, average="macro", zero_division=0)),
-        "f1": float(f1_score(y_true, y_pred, average="macro", zero_division=0)),
+        "precision": float(
+            precision_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
+        "recall": float(
+            recall_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
+        "f1": float(
+            f1_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
         "roc_auc": 0.0,
         "pr_auc": 0.0,
     }
@@ -69,7 +77,9 @@ def evaluate_classifier(model: Any, x: np.ndarray, y_true: np.ndarray) -> dict[s
     return metrics
 
 
-def _save_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, path: Path) -> None:
+def _save_confusion_matrix(
+    y_true: np.ndarray, y_pred: np.ndarray, path: Path
+) -> None:
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(6, 5))
     im = ax.imshow(cm, cmap="Blues")
@@ -83,7 +93,9 @@ def _save_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, path: Path) -
     plt.close(fig)
 
 
-def _save_roc_curve(y_true: np.ndarray, y_score: np.ndarray, path: Path) -> None:
+def _save_roc_curve(
+    y_true: np.ndarray, y_score: np.ndarray, path: Path
+) -> None:
     fpr, tpr, _ = roc_curve(y_true, y_score)
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.plot(fpr, tpr)
@@ -97,7 +109,9 @@ def _save_roc_curve(y_true: np.ndarray, y_score: np.ndarray, path: Path) -> None
     plt.close(fig)
 
 
-def _save_pr_curve(y_true: np.ndarray, y_score: np.ndarray, path: Path) -> None:
+def _save_pr_curve(
+    y_true: np.ndarray, y_score: np.ndarray, path: Path
+) -> None:
     precision, recall, _ = precision_recall_curve(y_true, y_score)
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.plot(recall, precision)

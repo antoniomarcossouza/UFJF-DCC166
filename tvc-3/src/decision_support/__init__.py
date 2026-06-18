@@ -1,1 +1,0 @@
-"""Apoio à decisão."""

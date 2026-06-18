@@ -31,7 +31,7 @@ make pipeline   # prepare + features + train + explain
 ```bash
 make dashboard
 # ou
-uv run streamlit run app/app.py
+uv run streamlit run app/streamlit_app.py
 ```
 
 O dashboard **não** permite treinamento, tuning ou upload de dados.
@@ -57,13 +57,20 @@ make report
 ## Estrutura
 
 ```
-app/               # dashboard Streamlit (SOC)
+app/
+  streamlit_app.py # entrada do dashboard
+  config.py        # constantes
+  soc_data.py      # cache e estado operacional
+  simulation/      # stream e buffer operacional
+  risk_scoring.py  # classificação de risco dos alertas
+  explain.py       # explicação SHAP por evento
+  views/           # telas do SOC
 data/raw/          # CSVs originais
 data/processed/    # datasets processados
 models/            # melhor modelo e metadados
 reports/           # artefatos de ML e SHAP
 mlruns/            # experimentos MLflow
-src/               # código de produção
+src/               # pipeline ML offline
 notebooks/         # exploração e demonstração
 report/            # artigo LaTeX SBC
 ```
