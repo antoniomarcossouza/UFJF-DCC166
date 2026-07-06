@@ -1,0 +1,162 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Berlin}
+%Outras opções de tema:
+%AnnArbor
+%Antibes
+%Bergen
+%Berkeley
+%*Berlin
+%Boadilla	
+%CambridgeUS
+%Copenhagen
+%Darmstadt
+%Goettingen
+%PaloAlto
+%Szeged
+%Warsaw
+
+\usecolortheme{metropolis}
+%Outras opções de cores:
+%*beaver
+%beetle
+%seahorse
+%*spruce
+%wolverine
+\usepackage{appendixnumberbeamer}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{plainnat}
+\usepackage{latexsym,amsmath,xcolor,multicol,booktabs,calligra}
+\usepackage{graphicx,pstricks,listings,stackengine}
+\usepackage[scale=2]{ccicons}
+\usepackage[portuges]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{aeguill}
+\usepackage{media9} %to insert GIF images
+\usepackage{wrapfig}
+\usepackage{hyperref}
+\usepackage{multicol}
+
+\usepackage{xspace}
+\newcommand{\themename}{\textbf{\textsc{metropolis}}\xspace}
+%Setagem pra cor dos hyperlinks
+\hypersetup{
+    colorlinks=true,
+    linkcolor=[RGB]{0,128,128},
+    linkbordercolor={blue},
+    filecolor=magenta,
+    urlcolor=blue,
+    citecolor=.
+}
+
+
+\title{Segurança em Redes IoT}
+\subtitle{Identificação, monitoramento e priorização de ameaças}
+\date{\today}
+\author{Antônio Marcos Souza Pereira, Samuel Paiva Bernardes}
+\institute{DCC - UFJF}
+% \titlegraphic{\hfill\includegraphics[height=1.5cm]{logo.pdf}}
+\setbeamertemplate{caption}[numbered]
+
+\begin{document}
+
+\maketitle
+
+\AtBeginSection[]
+{
+\begin{frame}
+\frametitle{Sumário}
+\tableofcontents[currentsection]
+\end{frame}
+}
+
+\section{Introdução}
+\begin{frame}{Motivação}
+    \begin{itemize}
+        \item Redes IoT colocam câmeras, sensores, fechaduras, controladores e medidores dentro da rede.
+        \item Cada equipamento novo também vira um ponto que pode falhar, vazar tráfego ou ser usado por um invasor.
+        \item Muitos desses dispositivos rodam por anos, com pouco recurso de hardware e atualização rara de firmware.
+        \item Quando um dispositivo IoT para, o efeito pode sair da rede e chegar ao ambiente físico.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Problema de pesquisa}
+    \begin{block}{Pergunta-problema}
+        Como apoiar a tomada de decisão de administradores de redes IoT na identificação, monitoramento e priorização de ameaças de segurança?
+    \end{block}
+
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item Detectar tráfego suspeito é só uma parte do trabalho.
+        \item O administrador precisa decidir qual alerta vem primeiro.
+        \item Em uma rede real, bloquear tudo pode derrubar sensores, serviços e rotinas que dependem deles.
+    \end{itemize}
+\end{frame}
+
+\section{Contextualização}
+
+\begin{frame}{O que torna IoT diferente?}
+    \begin{itemize}
+        \item A rede mistura fabricantes, protocolos e dispositivos com capacidades muito diferentes.
+        \item Sensores e controladores podem ficar ligados por anos, inclusive em laboratórios, prédios e ambientes industriais.
+        \item Muitos equipamentos não geram logs úteis e não aceitam agentes de segurança tradicionais.
+        \item Uma falha pequena, repetida em muitos dispositivos, vira problema de rede.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Ameaças comuns}
+    \begin{itemize}
+        \item Ataques DoS e DDoS tentam tirar serviços do ar pelo volume de pacotes.
+        \item Botnets associadas ao Mirai exploram senhas fracas e dispositivos expostos.
+        \item Varreduras procuram portas abertas, serviços antigos e versões vulneráveis.
+        \item Spoofing, força bruta e ataques web aparecem quando há interfaces de administração na rede.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset de referência}
+    \begin{itemize}
+        \item O CIC-IoT-2023 reúne tráfego IoT capturado em ambiente de pesquisa.
+        \item O conjunto traz tráfego benigno e ataques como DDoS, DoS, Mirai, Recon, Spoofing, Web e Brute Force.
+        \item Ele ajuda a observar padrões de comunicação associados a comportamento normal e malicioso.
+        \item Nesta apresentação, o dataset entra apenas para contextualizar o tema.
+    \end{itemize}
+\end{frame}
+
+\section{Delimitação do Tema}
+
+\begin{frame}{Da detecção à decisão}
+    \begin{itemize}
+        \item Administradores de rede recebem muitos eventos, alertas e indicadores ao mesmo tempo.
+        \item Um alerta diz que algo pode estar errado.
+        \item A prioridade mostra o que precisa de atenção antes.
+        \item Em IoT, uma resposta apressada pode interromper sensores, automação ou serviços dependentes.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Recorte do trabalho}
+    \begin{itemize}
+        \item Tema: segurança de redes IoT.
+        \item Objeto observado: tráfego de rede.
+        \item Interesse prático: apoiar quem monitora, investiga e prioriza eventos.
+    \end{itemize}
+\end{frame}
+
+\section{Conclusão}
+
+\begin{frame}{Síntese do tema}
+    \begin{itemize}
+        \item Redes IoT colocam dispositivos simples em tarefas ocasionalmente complexas.
+        \item O problema cresce quando muitos alertas chegam ao mesmo tempo.
+        \item O tema deste trabalho é identificar, monitorar e priorizar ameaças nesse tipo de rede.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Referências}
+    \footnotesize
+    \begin{itemize}
+        \item Canadian Institute for Cybersecurity. \textit{CIC IoT Dataset 2023}. \url{https://www.unb.ca/cic/datasets/iotdataset-2023.html}
+        \item Neto et al. \textit{CICIoT2023: A Real-Time Dataset and Benchmark for Large-Scale Attacks in IoT Environment}. Sensors, 2023. \url{https://www.mdpi.com/1424-8220/23/13/5941}
+    \end{itemize}
+\end{frame}
+
+\end{document}
