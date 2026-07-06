@@ -7,5 +7,13 @@ mlruns/
 *.pyc
 
 data/raw/*.csv
-data/processed/
+
+# Processed data (large); test set versionado para deploy do dashboard
+data/processed/*
+!data/processed/test.parquet
+
+# Modelos treinados (large); artefatos de inferência para deploy do dashboard
 models/*.joblib
+!models/best_model.joblib
+!models/features.joblib
+!models/label_encoder.joblib
