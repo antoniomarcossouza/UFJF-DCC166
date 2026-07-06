@@ -21,83 +21,124 @@
 \maketitle
 
 \begin{abstract}
-  Cada câmera, sensor ou controlador conectado à rede acrescenta um ponto onde o tráfego pode ser lido, distorcido ou usado como porta de entrada.
-  Administradores de IoT raramente falham por não ter alertas; falham por não saber qual alerta merece ação imediata.
-  Propomos um Sistema de Apoio à Decisão (SAD) sobre o dataset CIC-IoT-2023, com classificação de tráfego, explicações SHAP e regras que convertem probabilidade em recomendação operacional.
-  O pipeline offline cobre amostragem estratificada, seleção de atributos, comparação entre \textit{class weights} e SMOTE, tuning com Optuna e registro no MLflow.
-  Um dashboard no estilo de centro de operações consome modelos já treinados para inferência, simulação de tráfego, fila de alertas e análise de limiares, sem retreino em produção.
-  No conjunto de teste, o LightGBM atingiu F1 de 0,915 e ROC-AUC de 0,997 na tarefa binária BENIGN versus ATTACK.
+  Every camera, sensor, or controller on the network adds a point where traffic can be read, tampered with, or used as an entry vector.
+  IoT administrators rarely fail for lack of alerts; they fail because they cannot tell which alert needs immediate action.
+  We propose a Decision Support System (DSS) on the CIC-IoT-2023 dataset~\cite{ciciot2023}, with multiclass traffic classification, SHAP explanations~\cite{lundberg2017}, and rules that turn model probability into operational recommendations.
+  The offline pipeline covers stratified sampling of 1\% of 62 CSV files, selection of 26 features, comparison of \textit{class weights} and SMOTE, tuning with Optuna~\cite{akiba2019}, and logging in MLflow.
+  An operations-center-style dashboard consumes pre-trained models for inference, traffic simulation, alert queues, and threshold analysis, with no retraining in production.
+  On the test set (73,750 flows, about 97\% labeled as attack), XGBoost~\cite{chen2016} with \textit{class weights} reached macro F1 of 0.707, ROC-AUC of 0.975, and PR-AUC of 0.763 across eight aggregated classes.
 \end{abstract}
 
 \begin{resumo}
-  Detectar intrusão em IoT é condição necessária, mas insuficiente para quem administra a rede.
-  Construímos um SAD com pipeline reproduzível, explicabilidade e interface operacional alimentada pelo CIC-IoT-2023.
-  O sistema ordena ameaças por risco, sugere ações (bloquear, investigar, monitorar) e permite testar limiares de decisão antes de aplicá-los na operação.
+  Cada câmera, sensor ou controlador conectado à rede acrescenta um ponto onde o tráfego pode ser lido, distorcido ou usado como porta de entrada.
+  Administradores de IoT raramente falham por não ter alertas; falham por não saber qual alerta merece ação imediata.
+  Propomos um Sistema de Apoio à Decisão (SAD) sobre o dataset CIC-IoT-2023~\cite{ciciot2023}, com classificação multiclasse de tráfego, explicações SHAP~\cite{lundberg2017} e regras que convertem probabilidade em recomendação operacional.
+  O pipeline offline cobre amostragem estratificada de 1\% dos 62 arquivos CSV, seleção de 26 atributos, comparação entre \textit{class weights} e SMOTE, tuning com Optuna~\cite{akiba2019} e registro no MLflow.
+  Um dashboard no estilo de centro de operações consome modelos já treinados para inferência, simulação de tráfego, fila de alertas e análise de limiares, sem retreino em produção.
+  No conjunto de teste (73.750 fluxos, cerca de 97\% rotulados como ataque), o XGBoost~\cite{chen2016} com \textit{class weights} atingiu F1 macro de 0,707, ROC-AUC de 0,975 e PR-AUC de 0,763 entre oito classes agregadas.
 \end{resumo}
 
 \section{Introdução}
 
 Redes com dispositivos IoT concentram ataques que o tráfego corporativo tradicional também sofre, só que em escala e com ativos mais difíceis de patchar: DDoS, varredura de portas, botnets Mirai, injeção em protocolos web.
+Sensores e controladores costumam ficar anos ligados, com firmware desatualizado e pouco espaço para agentes de segurança convencionais.
 O analista enxerga volume; o problema é prioridade.
 
 Este trabalho parte da pergunta: \textit{como apoiar administradores de redes IoT na identificação, monitoramento e priorização de ameaças com aprendizado de máquina?}
-Não basta rotular um fluxo como malicioso. É preciso dizer o que fazer em seguida e por quê.
+Não basta rotular um fluxo como malicioso.
+É preciso dizer o que fazer em seguida, por quê, e com qual grau de confiança.
 
-A resposta que implementamos reúne cinco peças: pipeline modular com seed fixa; comparação de quatro classificadores e três formas de lidar com desbalanceamento; explicação por SHAP; motor de regras de risco; e um protótipo de dashboard que simula operação contínua, distinto de um notebook de experimentação.
+A resposta que implementamos reúne cinco peças: pipeline modular com seed fixa e artefatos versionados; comparação de quatro classificadores e três formas de lidar com desbalanceamento; explicação por SHAP; motor de regras de risco em quatro faixas; e um protótipo de dashboard que simula operação contínua, distinto de um ambiente de treinamento interativo.
+
+\section{Trabalhos Relacionados}
+
+Sistemas de Apoio à Decisão em segurança combinam dados, modelos e interface para reduzir carga cognitiva do operador~\cite{turban2015}.
+Em detecção de intrusão em IoT, a literatura recente converge para datasets públicos de tráfego rotulado e classificadores baseados em árvores~\cite{ciciot2023,ke2017,chen2016}.
+O CIC-IoT-2023 cobre dezenas de variantes de ataque capturadas em laboratório, o que facilita comparar abordagens, mas também distancia o experimento de redes reais com protocolos proprietários.
+
+A maioria dos trabalhos para na métrica de classificação.
+Poucos amarram probabilidade do modelo a ação operacional ou expõem o limiar de decisão como variável de política.
+Nossa contribuição está nesse intervalo: o modelo multiclasse alimenta um painel que ordena alertas, explica predições e deixa o operador simular o custo de subir ou baixar o threshold antes de aplicá-lo na rede.
 
 \section{Metodologia}
 
 \subsection{Dataset e pré-processamento}
 
-O CIC-IoT-2023 reúne dezenas de rótulos finos de ataque em arquivos CSV de tráfego capturado em laboratório.
-Para viabilizar treino e demonstração, extraímos amostra estratificada de 1\% dos 62 arquivos, normalizamos rótulos (o dataset original mistura convenções de caixa) e derivamos dois alvos: binário BENIGN versus ATTACK e oito grupos agregados (DDoS, DoS, Mirai, Recon, Spoofing, Web, BruteForce, Benign).
+O CIC-IoT-2023 reúne 62 arquivos CSV com tráfego IoT capturado em ambiente controlado, incluindo tráfego benigno e ataques como DDoS, DoS, Mirai, reconhecimento, spoofing, web e força bruta.
+Para viabilizar treino e demonstração em hardware modesto, extraímos amostra estratificada de 1\% dos arquivos, totalizando 454.403 fluxos após consolidação.
+Rótulos originais usam convenções mistas de caixa; normalizamos para dois alvos derivados: binário BENIGN versus ATTACK (para análise SHAP e simulação de limiares) e oito grupos agregados (DDoS, DoS, Mirai, Recon, Spoofing, Web, BruteForce, Benign) como tarefa principal de classificação.
 
-A limpeza remove duplicatas, infinitos e colunas sem variância.
-O \textit{StandardScaler} é ajustado só no treino; a divisão treino/validação/teste é estratificada, com a mesma seed em todas as etapas.
-Essa ordem evita que normalização ou seleção de features vazem informação do conjunto de teste.
+A limpeza remove 85.649 duplicatas, infinitos e colunas sem variância.
+O \textit{StandardScaler} é ajustado só no treino (239.683 fluxos); validação e teste recebem 55.311 e 73.750 fluxos, respectivamente, com divisão estratificada e seed 42 em todas as etapas.
+Essa ordem evita que normalização ou seleção de atributos vazem informação do conjunto de teste.
+
+O desbalanceamento é severo: tráfego benigno representa cerca de 2,3\% da amostra.
+Métricas como acurácia isolada tendem a inflar desempenho; por isso adotamos F1 macro e PR-AUC como critérios principais de seleção de modelo.
 
 \subsection{Engenharia de atributos}
 
-Correlação linear acima de 0,9 entre pares de atributos leva à remoção de um deles, para reduzir redundância sem perder sinal.
-Mutual information e importância de Random Forest no treino indicam quais variáveis permanecem; as decisões ficam registradas em artefatos versionados, não só na memória do experimento.
+Partimos de 39 atributos derivados de fluxo (taxa de pacotes, flags TCP, estatísticas de tamanho, protocolos de aplicação).
+Correlação linear acima de 0,9 entre pares leva à remoção de um deles, eliminando dez colunas redundantes (entre elas contadores TCP altamente correlacionados).
+Mutual information e importância de Random Forest no treino indicam quais variáveis permanecem; mantivemos 26 atributos presentes no top-25 de MI ou importância RF após a poda por correlação.
+As decisões ficam registradas em \texttt{feature\_selection.json}, não só na memória do experimento.
 
-\subsection{Modelos e balanceamento}
+\subsection{Modelos, balanceamento e tuning}
 
-Testamos Regressão Logística, Random Forest, XGBoost e LightGBM no mesmo fluxo de features e splits.
-O desbalanceamento entre tráfego benigno e ataque é tratado de três modos: nenhum ajuste, \textit{class weights} e SMOTE.
-Random Forest, XGBoost e LightGBM passam por busca de hiperparâmetros com Optuna, maximizando F1 macro na validação.
+Testamos Regressão Logística, Random Forest, XGBoost e LightGBM no mesmo fluxo de features e splits, totalizando doze combinações iniciais (quatro modelos por três estratégias de balanceamento).
+O desbalanceamento é tratado de três modos: nenhum ajuste, \textit{class weights} e SMOTE.
+Random Forest, XGBoost e LightGBM passam por busca de hiperparâmetros com Optuna (30 trials), maximizando F1 macro na validação.
 Cada execução grava métricas, parâmetros, matrizes de confusão e curvas ROC/PR no MLflow.
 
-\subsection{Sistema de apoio à decisão}
-
-A probabilidade de ataque vira score de risco e cai em quatro faixas: Baixo, Médio, Alto e Crítico.
-Regras simples amarram faixa a ação: acima de 95\%, bloqueio e isolamento de segmento; entre 80\% e 95\%, abertura de investigação; entre 60\% e 80\%, monitoramento reforçado.
-O dashboard Streamlit lê modelos e relatórios gerados offline.
-Uma página emula chegada contínua de eventos a partir do conjunto de teste; outra permite mover o limiar de decisão e medir falsos positivos e falsos negativos, tratando o limiar como variável de política operacional, não só de estatística.
-
-\section{Resultados}
-
-A Tabela~\ref{tab:metrics} condensa o melhor modelo no teste, LightGBM sem rebalanceamento por SMOTE, entre as doze combinações avaliadas na etapa inicial de treino.
+A Tabela~\ref{tab:tuning} resume o desempenho no teste após tuning.
+XGBoost com \textit{class weights} ficou como melhor combinação (F1 macro 0,707), superando Random Forest (0,688) e LightGBM (0,699) nas configurações encontradas.
+SMOTE elevou recall em alguns classificadores durante a etapa inicial, mas aumentou custo de treino e, em certos casos, falsos positivos; por isso o modelo final não usa oversampling sintético.
 
 \begin{table}[ht]
 \centering
-\caption{Métricas do LightGBM no conjunto de teste (tarefa binária)}
-\label{tab:metrics}
+\caption{Desempenho no teste após tuning Optuna (\textit{class weights})}
+\label{tab:tuning}
 \begin{tabular}{lcccccc}
 \hline
 Modelo & Acc. & Prec. & Rec. & F1 & ROC-AUC & PR-AUC \\
 \hline
-LightGBM & 0.988 & 0.912 & 0.919 & 0.915 & 0.997 & 0.904 \\
+XGBoost & 0,841 & 0,774 & 0,680 & 0,707 & 0,975 & 0,763 \\
+Random Forest & 0,731 & 0,695 & 0,715 & 0,688 & 0,974 & 0,752 \\
+LightGBM & 0,766 & 0,708 & 0,717 & 0,699 & 0,974 & 0,761 \\
 \hline
 \end{tabular}
 \end{table}
 
-A acurácia próxima de 99\% reflete a predominância de tráfego benigno na amostra; por isso F1 macro e PR-AUC (0,904) pesam mais na escolha do modelo do que acurácia isolada.
-SMOTE elevou recall em alguns classificadores, mas aumentou custo de treino e, em certos casos, falsos positivos.
-A página de simulação de cenários no dashboard expõe esse custo quando o limiar sobe de 0,50 para 0,90: menos alarmes, mais ataques passando despercebidos.
+\subsection{Sistema de apoio à decisão}
 
-A Figura~\ref{fig:shap} mostra quais atributos de fluxo mais empurram o modelo para a classe ataque.
-Taxa de pacotes, flags TCP e estatísticas de tamanho aparecem no topo, coerente com ataques volumétricos e varredura presentes no dataset.
+A arquitetura separa pipeline offline (\texttt{make pipeline}) de consumo operacional (\texttt{make dashboard}).
+O treino produz \texttt{best\_model.joblib}, scaler, encoder de rótulos e relatórios SHAP; o dashboard lê esses artefatos sem permitir retreino, upload de dados ou tuning.
+
+A probabilidade de ataque (1 menos a probabilidade da classe Benign) vira score de risco e cai em quatro faixas: Baixo ($<$60\%), Médio (60--80\%), Alto (80--95\%) e Crítico ($\geq$95\%).
+Regras simples amarram faixa a ação sugerida: acima de 95\%, bloqueio e isolamento de segmento; entre 80\% e 95\%, abertura de investigação; entre 60\% e 80\%, monitoramento reforçado; abaixo de 60\%, registro sem escalonamento imediato.
+
+O dashboard Streamlit organiza seis telas em dois blocos.
+No bloco operacional, \textit{Visão Geral} resume o estado da simulação; \textit{Tempo Real} exibe chegada contínua de eventos com atualização periódica; \textit{Alertas} lista a fila priorizada por risco; e \textit{Explicabilidade} combina gráficos SHAP offline com contribuições por evento na janela operacional.
+No bloco de avaliação, \textit{What-If} permite mover o limiar de decisão sobre o conjunto de teste e medir falsos positivos e falsos negativos; \textit{Performance} exibe métricas registradas no treino.
+
+A simulação operacional usa mix 50\% benigno / 50\% ataque, distinto da distribuição real do teste (~97\% ataque).
+Essa escolha força o operador a lidar com filas mistas durante a demonstração, embora a calibração de limiares deva usar a página What-If, que reflete a distribuição desbalanceada do holdout.
+
+\section{Resultados}
+
+\subsection{Classificação multiclasse}
+
+Com oito classes agregadas, o XGBoost tunado distingue DDoS, DoS, Mirai, reconhecimento, spoofing, web, força bruta e tráfego benigno.
+Recall de 0,680 indica que parte dos ataques menos frequentes (por exemplo, BruteForce e Web, com centenas de exemplos contra dezenas de milhares de DDoS) ainda escapa ao classificador.
+Precision de 0,774 sugere que, entre os alertas emitidos, três em cada quatro correspondem ao tipo previsto, o que é aceitável para triagem inicial, mas exige revisão humana antes de bloqueio automático.
+
+A acurácia de 84\% está longe dos 99\% que modelos binários costumam exibir neste dataset; a diferença vem da tarefa mais difícil (discriminar oito grupos) e do desbalanceamento entre classes de ataque, não de falha geral do pipeline.
+
+\subsection{Explicabilidade}
+
+A Figura~\ref{fig:shap} mostra quais atributos de fluxo mais empurram o modelo para predições de ataque em subamostra de 500 eventos maliciosos do teste.
+\textit{Number} (contagem de pacotes), \textit{Rate}, \textit{IAT} (intervalo entre chegadas) e \textit{Tot\_sum} aparecem no topo, coerente com ataques volumétricos e varredura presentes no dataset.
+Flags TCP (\textit{psh\_flag\_number}, \textit{ack\_flag\_number}, \textit{syn\_flag\_number}) e \textit{Header\_Length} reforçam que o modelo captura padrões de transporte, não só volume bruto.
+\textit{HTTPS} e \textit{UDP} no top-15 indicam que protocolo de aplicação também discrimina classes, útil para o analista que precisa justificar um alerta além do score numérico.
 
 \begin{figure}[ht]
 \centering
@@ -106,20 +147,32 @@ Taxa de pacotes, flags TCP e estatísticas de tamanho aparecem no topo, coerente
 \label{fig:shap}
 \end{figure}
 
+\subsection{Impacto operacional de limiares}
+
+A página What-If trata o limiar como variável de política, não só de estatística.
+Com threshold padrão de 0,70 sobre o teste desbalanceado, o operador vê quantos benignos seriam bloqueados (falsos positivos) e quantos ataques passariam (falsos negativos).
+Subir o limiar de 0,50 para 0,90 reduz alarmes, mas aumenta ataques não detectados; em IoT, um falso positivo que derruba sensor de saúde ou automação industrial pode custar mais que um ataque não bloqueado em ambiente de teste.
+O dashboard torna esse trade-off visível antes da implantação.
+
 \section{Discussão}
 
-Separar treino de operação não é detalhe de engenharia: é o que permite apresentar o trabalho como SAD e não como laboratório de data science embutido em interface web.
-O analista vê recomendação e explicação; o cientista de dados roda \texttt{make train} em outro momento.
+Separar treino de operação não é detalhe de engenharia: é o que permite apresentar o trabalho como SAD e não como laboratório de ciência de dados embutido em interface web~\cite{provost2013}.
+O analista vê recomendação e explicação; o cientista de dados roda \texttt{make train} em outro momento, com rastreabilidade no MLflow.
 
-A dependência de dados históricos do CIC-IoT-2023 limita a transferência para redes reais com protocolos proprietários ou ataques ainda não rotulados no conjunto.
+A dependência de dados históricos do CIC-IoT-2023 limita transferência para redes reais com protocolos proprietários ou ataques ainda não rotulados no conjunto.
 Processar 1\% dos CSVs já exige dezenas de minutos e gigabytes em disco; o dataset integral multiplica esse custo.
-A análise de limiares mitiga parte do problema operacional: em IoT, um falso positivo que derruba sensor de saúde ou automação industrial pode custar mais que um ataque não bloqueado em ambiente de teste.
+Mesmo assim, o pipeline modular (prepare, features, train, tune, explain) permite retreinar quando novos dados chegarem, sem reescrever o dashboard.
+
+A classificação multiclasse agrega dezenas de rótulos finos do dataset original em oito grupos, o que simplifica a interface, mas apaga nuance (por exemplo, distinguir SYN flood de UDP flood dentro de DDoS).
+Próximas versões podem expor subtipo fino na explicação SHAP enquanto mantêm agregação na fila de alertas.
 
 \section{Conclusão}
 
-Entregamos um SAD para segurança IoT que liga classificação, explicabilidade e regras de ação em um fluxo reproduzível e demonstrável.
-O protótipo se comporta como painel de monitoramento simplificado, não como ferramenta de treinamento.
-Próximos passos naturais são acoplar alertas a um SIEM, medir \textit{drift} de tráfego ao longo do tempo e validar limiares com equipes reais de operação, não só com métricas de teste.
+Entregamos um SAD para segurança IoT que liga classificação multiclasse, explicabilidade SHAP e regras de ação em um fluxo reproduzível e demonstrável.
+O XGBoost com \textit{class weights} atingiu F1 macro de 0,707 no teste; o protótipo se comporta como painel de monitoramento simplificado, não como ferramenta de treinamento.
+
+Próximos passos naturais são acoplar alertas a um SIEM, medir \textit{drift} de tráfego ao longo do tempo e validar limiares com equipes reais de operação, não só com métricas de holdout.
+O código, artefatos e instruções de reprodução estão disponíveis no repositório do projeto.
 
 \bibliographystyle{sbc}
 \bibliography{sbc-template}
