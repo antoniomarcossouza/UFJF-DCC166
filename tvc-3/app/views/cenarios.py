@@ -17,7 +17,7 @@ def render() -> None:
     total = len(preds)
     benign_pct = float((preds["label_binary"] == "BENIGN").mean() * 100)
     st.caption(
-        f"Conjunto de teste: {total:,} eventos — "
+        f"Conjunto de teste: {total:,} eventos:"
         f"{benign_pct:.1f}% benigno / {100 - benign_pct:.1f}% ataque (rótulos reais)."
     )
 
@@ -26,8 +26,8 @@ def render() -> None:
 
     threshold = st.select_slider(
         "Threshold de decisão",
-        options=[0.50, 0.70, 0.90],
-        value=0.70,
+        options=[round(i * 0.1, 1) for i in range(11)],
+        value=0.7,
     )
     y_pred = (scores >= threshold).astype(int)
     tp = int(((y_pred == 1) & (y_true == 1)).sum())

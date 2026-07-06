@@ -9,7 +9,9 @@ import shap
 from models.predict import ModelPredictor
 
 
-def _compute_shap_values(model, x_sample: np.ndarray, feature_names: list[str]):
+def _compute_shap_values(
+    model, x_sample: np.ndarray, feature_names: list[str]
+):
     """Calcula valores SHAP para um evento."""
     try:
         explainer = shap.TreeExplainer(model)

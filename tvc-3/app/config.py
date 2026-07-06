@@ -37,7 +37,7 @@ OPERATIONAL_PAGE_IDS = {
 }
 
 OPERATIONAL_CAPTION = (
-    "Simulação operacional — mix 50% benigno / 50% ataque. "
+    "Simulação operacional - mix 50% benigno / 50% ataque. "
     "Não reflete o conjunto de teste."
 )
 

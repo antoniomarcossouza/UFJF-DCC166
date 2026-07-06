@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import pandas as pd
-
 from risk_scoring import classify_risk
+
 from simulation.traffic_stream import TrafficEvent
 
 
