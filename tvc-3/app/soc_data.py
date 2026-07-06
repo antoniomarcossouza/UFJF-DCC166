@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-
-from models.predict import ModelPredictor, load_test_data
 from simulation.event_buffer import BufferedEvent, EventBuffer
 from simulation.traffic_stream import TrafficStream
+
+from models.predict import ModelPredictor, load_test_data
 from utils.config import load_config
 from utils.io import load_json
 from utils.paths import MODELS_DIR
